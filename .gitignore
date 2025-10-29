@@ -1,0 +1,7 @@
+//write the files to be ignored
+node_modules
+.env
+.DS_Store
+npm-debug.log
+.vscode
+dist
