@@ -4,7 +4,7 @@ import cors from 'cors';
 import User from './models/userSchema.js';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-
+import jwt from 'jsonwebtoken';
 import verifyToken from './middleware/verifyToken.js';
 
 dotenv.config();
@@ -74,6 +74,14 @@ const token=jwt.sign(
     }
 });
 
+app.get('/profile', verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        res.json({ status: true, data: user });
+    } catch (error) {
+        res.json({ status: false, error: error.message });
+    }
+});
 
 
 app.listen(PORT, () => {
