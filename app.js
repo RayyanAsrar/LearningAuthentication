@@ -3,15 +3,19 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import User from './models/userSchema.js';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+
+import verifyToken from './middleware/verifyToken.js';
+
+dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
-const URI = `mongodb+srv://MuhammadRayyanAsrar:RaYYaN8008@todoapp.kzq80qh.mongodb.net/?retryWrites=true&w=majority&appName=TodoApp`
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-mongoose.connect(URI).then(() => {
+mongoose.connect(process.env.MONGODB_URI).then(() => {
     console.log("Connected to MongoDB");
 }).catch((err) => {
     console.log("Error connecting to MongoDB", err);
@@ -37,32 +41,38 @@ app.post('/signup', async (req, res) => {
 })
 
 
-app.post('/login', async (req, res) => {
+app.post('/login',async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({ email: email });
-        // console.log(user);
-        const comparePassword = await bcrypt.compare(password, user.password);
-        // console.log("comparePassword",comparePassword);
-        if (comparePassword) {
-            return res.json({ status: true, data: user, message: "Login successful" });
-        }   else {
-            return res.json({ status: false, message: "Invalid credentials" });
-        }   
-        
-    
-        
 
-
-
+        const user = await User.findOne({ email });
         if (!user) {
             return res.json({ status: false, message: "User not found" });
         }
-    }
-    catch (error) {
+
+        const comparePassword = await bcrypt.compare(password, user.password);
+        if (!comparePassword) {
+            return res.json({ status: false, message: "Invalid credentials" });
+        }
+//create jwt token
+const token=jwt.sign(
+    {id:user._id},
+    process.env.JWT_SECRET,
+    {expiresIn:'1h'}
+);
+
+        const userData = { ...user._doc };
+        delete userData.password;
+        res.json({ status: true, 
+            data: userData,
+            token, 
+            message: "Login successful" });
+
+
+    } catch (error) {
         res.json({ status: false, error: error.message || "Internal Server Error" });
     }
-})
+});
 
 
 
